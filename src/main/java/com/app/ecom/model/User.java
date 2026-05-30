@@ -17,4 +17,18 @@ public class User {
     private Long id;
     private String firstName;
     private String lastName;
+    @Column(unique = true, nullable = false)
+    private String email;
+
+    private String password;
+
+    private String phoneNumber;
+
+    @Enumerated(EnumType.STRING)
+    private UserRole role;
+
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "address_id", referencedColumnName = "id")
+    Address address;
+
 }
