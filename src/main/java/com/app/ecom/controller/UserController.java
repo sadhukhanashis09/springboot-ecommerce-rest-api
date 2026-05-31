@@ -1,5 +1,7 @@
 package com.app.ecom.controller;
 
+import com.app.ecom.dto.userdto.UserRequestDTO;
+import com.app.ecom.dto.userdto.UserResponseDTO;
 import com.app.ecom.model.User;
 import com.app.ecom.service.UserService;
 import org.springframework.http.HttpStatus;
@@ -19,29 +21,32 @@ public class UserController {
     }
 
     @GetMapping("/api/users")
-    public ResponseEntity<List<User>> getAllUser() {
+    public ResponseEntity<List<UserResponseDTO>> getAllUser() {
         return new ResponseEntity<>(userService.getAllUsers(), HttpStatus.OK);
     }
 
     @GetMapping("/api/users/{id}")
     public ResponseEntity<?> getAllUser(@PathVariable Long id) {
-        User user = userService.findById(id);
-        if (user != null) {
-            return new ResponseEntity<>(user, HttpStatus.OK);
+        UserResponseDTO userResponse = userService.findById(id);
+        if (userResponse != null) {
+            return new ResponseEntity<>(userResponse, HttpStatus.OK);
         }
         return ResponseEntity.status(NOT_FOUND).body("User Not found");
 
     }
 
     @PostMapping("/api/users")
-    public ResponseEntity<String> createUser(@RequestBody User user) {
-        userService.createUser(user);
-        return ResponseEntity.status(CREATED).body("User Created Successfully");
+    public ResponseEntity<UserResponseDTO> createUser(@RequestBody UserRequestDTO createUserRequest) {
+        UserResponseDTO createdUser=userService.createUser(createUserRequest);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .header("Location", "/api/users/" + createdUser.getId())
+                .body(createdUser);
     }
 
     @PutMapping("/api/users/{id}")
-    public ResponseEntity<String> updateUser(@PathVariable Long id, @RequestBody User user) {
-        boolean isUpdated = userService.updateUser(id, user);
+    public ResponseEntity<String> updateUser(@PathVariable Long id, @RequestBody UserRequestDTO userUpdateRequest) {
+        boolean isUpdated = userService.updateUser(id, userUpdateRequest);
         if(!isUpdated){
             return ResponseEntity.status(NOT_FOUND).body("User not found");
         }
