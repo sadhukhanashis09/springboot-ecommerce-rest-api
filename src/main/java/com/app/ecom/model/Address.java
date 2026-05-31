@@ -8,6 +8,7 @@ import lombok.*;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Entity(name= "addresses_table")
 public class Address {
 
     @Id
@@ -17,5 +18,6 @@ public class Address {
     private String street;
     private String city;
     private String state;
+    private String country;
     private String pincode;
 }
