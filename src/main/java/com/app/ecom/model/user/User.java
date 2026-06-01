@@ -1,12 +1,11 @@
-package com.app.ecom.model;
+package com.app.ecom.model.user;
 
+import com.app.ecom.model.address.UserRole;
+import com.app.ecom.model.address.Address;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import jakarta.persistence.*;
 import lombok.Data;
-import lombok.Generated;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 

@@ -1,11 +1,11 @@
-package com.app.ecom.service;
+package com.app.ecom.service.userservice;
 
 import com.app.ecom.dto.userdto.UserRequestDTO;
 import com.app.ecom.dto.userdto.UserResponseDTO;
 import com.app.ecom.mapper.AddressMapper;
 import com.app.ecom.mapper.UserMapper;
-import com.app.ecom.model.User;
-import com.app.ecom.repository.UserRepository;
+import com.app.ecom.model.user.User;
+import com.app.ecom.repository.userrepository.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
