@@ -1,0 +1,13 @@
+package com.app.ecom.dto.productdto;
+
+import lombok.Data;
+
+@Data
+public class ProductRequestDTO {
+    private String name;
+    private String description;
+    private Double price;
+    private Integer stockQuantity;
+    private String category;
+    private String imageUrl;
+}
