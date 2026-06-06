@@ -8,6 +8,7 @@ import com.app.ecom.repository.productrepository.ProductRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class ProductService {
@@ -28,6 +29,12 @@ public class ProductService {
 
     }
 
+    public List<ProductResponseDTO> getActiveProduct() {
+        return productRepository.findByIsActiveTrue().stream().map(
+                productMapper::toProductResponse
+        ).toList();
+    }
+
     public ProductResponseDTO getProductById(Long id) {
         // Fetch product by ID and convert to DTO
         return productRepository.findById(id)
@@ -46,7 +53,8 @@ public class ProductService {
         // Fetch existing product, update fields, and save
         return productRepository.findById(id)
                 .map(existingProduct -> {
-                    Product updatedProduct = productMapper.toUpdateProductFromRequestDTO(existingProduct, productUpdateRequest);
+                    Product updatedProduct = productMapper.toUpdateProductFromRequestDTO(existingProduct,
+                            productUpdateRequest);
                     Product savedProduct = productRepository.save(updatedProduct);
                     return productMapper.toProductResponse(savedProduct);
                 })
@@ -55,11 +63,23 @@ public class ProductService {
 
     public boolean deleteById(Long id) {
         // Delete product by ID
-        boolean exists = productRepository.existsById(id);
-        if (exists) {
-            productRepository.deleteById(id);
+        Optional<Product> productOpt = productRepository.findById(id);
+        if (productOpt.isPresent()) {
+            Product product = productOpt.get();
+            product.setIsActive(false);
+            productRepository.save(product);
             return true;
         }
         return false;
+    }
+
+
+    public List<ProductResponseDTO> searchProducts(String keywords) {
+        List<Product> products = productRepository
+                .findByNameContainingIgnoreCaseAndIsActiveTrue(keywords);
+
+        return products.stream()
+                .map(productMapper::toProductResponse)
+                .toList();
     }
 }

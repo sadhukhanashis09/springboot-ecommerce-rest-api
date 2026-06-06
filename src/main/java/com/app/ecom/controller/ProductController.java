@@ -15,6 +15,7 @@ import java.util.List;
 public class ProductController {
     private final ProductService productService;
 
+    //Get All Product
     public ProductController(ProductService productService) {
         this.productService = productService;
     }
@@ -23,6 +24,12 @@ public class ProductController {
         return ResponseEntity.ok(productService.getAllProducts());
     }
 
+    //Get Active Product
+    @GetMapping("/active")
+    public ResponseEntity<List<ProductResponseDTO>> getActiveProducts() {
+        return ResponseEntity.ok(productService.getActiveProduct());
+    }
+    //Get Product By Id
     @GetMapping("/{id}")
     public ResponseEntity<ProductResponseDTO> getProductById(
             @PathVariable Long id) {
@@ -33,6 +40,18 @@ public class ProductController {
         return ResponseEntity.notFound().build();
     }
 
+    //Product search
+    @GetMapping("/search")
+    public ResponseEntity<List<ProductResponseDTO>> getProductByKeyWords(
+            @RequestParam String keywords) {
+        List<ProductResponseDTO> productResponse = productService.searchProducts(keywords);
+        if (productResponse != null) {
+            return ResponseEntity.ok(productResponse);
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    //Create Product
     @PostMapping()
     public ResponseEntity<String> createProduct(
             @RequestBody ProductRequestDTO productRequest
@@ -45,6 +64,7 @@ public class ProductController {
                 .body("Product created Successfully at:"+ location.toString());
     }
 
+    //Update an existing product
     @PutMapping("/{id}")
     public ResponseEntity<ProductResponseDTO> updateProduct(
             @PathVariable Long id, @RequestBody ProductRequestDTO
