@@ -1,72 +1,108 @@
 package com.app.ecom.service.cartservice;
 
-import com.app.ecom.dto.cartdto.CartItemRequestDTO;
+import com.app.ecom.dto.cartdto.request.CartItemRequestDTO;
+import com.app.ecom.dto.cartdto.request.CartItemRequestDTO;
+import com.app.ecom.dto.cartdto.response.CartItemResponseDTO;
+import com.app.ecom.dto.cartdto.response.CartResponseDTO;
+import com.app.ecom.mapper.CartMapper;
+import com.app.ecom.model.cart.Cart;
 import com.app.ecom.model.cart.CartItem;
 import com.app.ecom.model.product.Product;
 import com.app.ecom.model.user.User;
 import com.app.ecom.repository.cartitemrepository.CartItemRepository;
+import com.app.ecom.repository.cartrepository.CartRepository;
 import com.app.ecom.repository.productrepository.ProductRepository;
 import com.app.ecom.repository.userrepository.UserRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 @Service
 public class CartService {
-    private final CartItemRepository cartItemRepository;
-    private final ProductRepository productRepository;
+
     private final UserRepository userRepository;
+    private final ProductRepository productRepository;
+    private final CartRepository cartRepository;
+    private final CartItemRepository cartItemRepository;
+    private final CartMapper cartMapper;
 
-
-    public CartService(CartItemRepository cartItemRepository, ProductRepository productRepository, UserRepository userRepository) {
-        this.cartItemRepository = cartItemRepository;
-        this.productRepository = productRepository;
+    public CartService(UserRepository userRepository, ProductRepository productRepository, CartRepository cartRepository, CartItemRepository cartItemRepository, CartMapper cartMapper) {
         this.userRepository = userRepository;
+        this.productRepository = productRepository;
+        this.cartRepository = cartRepository;
+        this.cartItemRepository = cartItemRepository;
+        this.cartMapper = cartMapper;
     }
 
-    public boolean addProductToCart(String userId, CartItemRequestDTO cartItemRequest) {
-        //first validation :Look for the product if exist using productId from cartItemRequest
+    // ✅ Add product to cart
+    @Transactional
+    public CartResponseDTO addProductToCart(String userId, CartItemRequestDTO cartItemRequest) {
+        User user = userRepository.findById(Long.valueOf(userId))
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        Optional<Product> productOpt = productRepository.findById(cartItemRequest.getProductId());
+        Product product = productRepository.findById(cartItemRequest.getProductId())
+                .orElseThrow(() -> new RuntimeException("Product not found"));
 
+        Cart cart = cartRepository.findByUserId(user.getId())
+                .orElseGet(() -> {
+                    Cart newCart = new Cart();
+                    newCart.setUser(user);
+                    return cartRepository.save(newCart);
+                });
 
-        if(productOpt.isEmpty()){
-            return false;
-        }
-        //If product exist get the product
-        Product product = productOpt.get();
-        //Product stock validation
-        if(product.getStockQuantity()<cartItemRequest.getQuantity()){
-            return false;
-        }
-        Optional<User> userOpt = userRepository.findById(Long.valueOf(userId));
-        if(userOpt.isEmpty()){
-            return false;
-        }
-        User user = userOpt.get();
+        Optional<CartItem> existingItemOpt = cart.getItems().stream()
+                .filter(item -> item.getProduct().getId().equals(product.getId()))
+                .findFirst();
 
-        CartItem existingCartItem = cartItemRepository.findByUserAndProduct(user,product);
+        if (existingItemOpt.isPresent()) {
+            CartItem existingItem = existingItemOpt.get();
+            existingItem.setQuantity(existingItem.getQuantity() + cartItemRequest.getQuantity());
+            existingItem.setSubtotal(existingItem.getUnitPrice()
+                    .multiply(BigDecimal.valueOf(existingItem.getQuantity())));
+        } else {
+            CartItem newItem = new CartItem();
+            newItem.setCart(cart);
+            newItem.setProduct(product);
+            newItem.setQuantity(cartItemRequest.getQuantity());
+            newItem.setUnitPrice(product.getPrice());
+            newItem.setSubtotal(product.getPrice()
+                    .multiply(BigDecimal.valueOf(cartItemRequest.getQuantity())));
+            cart.getItems().add(newItem);
+        }
 
-        if(existingCartItem != null){
-         //if Product already there Update the quantity
-         existingCartItem.setQuantity(existingCartItem.getQuantity()+cartItemRequest.getQuantity());
-         //Updating the price
-         existingCartItem.setPrice(product.getPrice().multiply(
-                 BigDecimal.valueOf(existingCartItem.getQuantity())
-         ));
-         cartItemRepository.save(existingCartItem);
-        }
-        else {
-        CartItem cartItem = new CartItem();
-        cartItem.setUser(user);
-        cartItem.setProduct(product);
-        cartItem.setQuantity(cartItemRequest.getQuantity());
-        cartItem.setPrice(product.getPrice().multiply(BigDecimal.valueOf(cartItemRequest.getQuantity())));
-        cartItemRepository.save(cartItem);
-        }
+        Cart savedCart = cartRepository.save(cart);
+        //return mapToDTO(savedCart);
+        return cartMapper.mapToDTO(savedCart);
+    }
+
+    // ✅ Get cart items
+    public CartResponseDTO getCartItems(String userId) {
+        User user = userRepository.findById(Long.valueOf(userId))
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Cart cart = cartRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new RuntimeException("Cart not found"));
+
+        return cartMapper.mapToDTO(cart);
+    }
+
+    // ✅ Delete cart item
+    @Transactional
+    public boolean deleteCartItem(String userId, String productId) {
+        User user = userRepository.findById(Long.valueOf(userId)).orElse(null);
+        Product product = productRepository.findById(Long.valueOf(productId)).orElse(null);
+
+        if (user == null || product == null) return false;
+
+        Cart cart = cartRepository.findByUserId(user.getId()).orElse(null);
+        if (cart == null) return false;
+
+        cartItemRepository.deleteByCartAndProduct(cart, product);
         return true;
-
-
     }
 }
+
+
