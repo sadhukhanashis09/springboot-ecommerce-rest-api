@@ -1,8 +1,7 @@
 package com.app.ecom.mapper;
 
 import com.app.ecom.dto.addressdto.AddressDTO;
-import com.app.ecom.model.Address;
-import lombok.Data;
+import com.app.ecom.model.address.Address;
 import org.springframework.stereotype.Component;
 
 @Component

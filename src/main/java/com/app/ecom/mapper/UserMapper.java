@@ -2,8 +2,7 @@ package com.app.ecom.mapper;
 
 import com.app.ecom.dto.userdto.UserRequestDTO;
 import com.app.ecom.dto.userdto.UserResponseDTO;
-import com.app.ecom.mapper.AddressMapper;
-import com.app.ecom.model.User;
+import com.app.ecom.model.user.User;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -15,7 +14,7 @@ public class UserMapper {
         this.addressMapper = addressMapper;
     }
 
-    // ✅ CREATE mapping
+    // ✅ CREATE mapping from UserDTO to UserModel and Persist in DB
     public User toUserModel(UserRequestDTO dto) {
         User user = new User();
 
@@ -30,7 +29,7 @@ public class UserMapper {
         return user;
     }
 
-
+    //To Update user from UserDTO to UserModel and Persist in DB
     public void updateUserFromDTO(UserRequestDTO dto, User user) {
 
         user.setFirstName(dto.getFirstName());
@@ -41,7 +40,7 @@ public class UserMapper {
 
     }
 
-    // ✅ RESPONSE mapping
+    // ✅ RESPONSE mapping UserModel to UserDTO
     public UserResponseDTO toUserResponseDTO(User user) {
 
         UserResponseDTO dto = new UserResponseDTO();
