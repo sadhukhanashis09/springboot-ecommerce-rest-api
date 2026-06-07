@@ -15,13 +15,16 @@ public class CartItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
     @ManyToOne
-    @JoinColumn(name="user_id", nullable=false)
-    private User user;
+    @JoinColumn(name="cart_id", nullable = false)
+    private Cart cart;
     @ManyToOne
     @JoinColumn(name="product_id", nullable=false)
     private Product product;
+
     private Integer quantity;
-    private BigDecimal price;
+    private BigDecimal unitPrice;
+    private BigDecimal subtotal;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

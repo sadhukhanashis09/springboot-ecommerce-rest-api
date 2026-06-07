@@ -1,4 +1,4 @@
-package com.app.ecom.dto.cartdto;
+package com.app.ecom.dto.cartdto.request;
 
 import lombok.Data;
 
