@@ -2,11 +2,13 @@ package com.app.ecom.dto.productdto;
 
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 @Data
 public class ProductRequestDTO {
     private String name;
     private String description;
-    private Double price;
+    private BigDecimal price;
     private Integer stockQuantity;
     private String category;
     private String imageUrl;
