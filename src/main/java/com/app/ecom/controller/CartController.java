@@ -27,5 +27,14 @@ public class CartController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
+    @DeleteMapping("item/{productId}")
+    public ResponseEntity<Void> deleteCart(
+            @RequestHeader ("X-User-Id") String userId,
+            @PathVariable ("productId") String productId
+    ){
+        boolean isDeleted = cartService.deleteCart(userId,productId);
+        return isDeleted ? ResponseEntity.noContent().build() :
+                ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+    }
 
 }

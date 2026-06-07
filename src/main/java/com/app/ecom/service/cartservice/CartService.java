@@ -7,12 +7,14 @@ import com.app.ecom.model.user.User;
 import com.app.ecom.repository.cartitemrepository.CartItemRepository;
 import com.app.ecom.repository.productrepository.ProductRepository;
 import com.app.ecom.repository.userrepository.UserRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.Optional;
 
 @Service
+@Transactional
 public class CartService {
     private final CartItemRepository cartItemRepository;
     private final ProductRepository productRepository;
@@ -68,5 +70,16 @@ public class CartService {
         return true;
 
 
+    }
+
+    public boolean deleteCart(String userId, String productId) {
+        Optional<Product> productOpt = productRepository.findById(Long.valueOf(productId));
+        Optional<User> userOpt = userRepository.findById(Long.valueOf(userId));
+
+        if(productOpt.isPresent() && userOpt.isPresent()){
+            cartItemRepository.deleteByUserAndProduct(userOpt.get(),productOpt.get());
+            return true;
+        }
+        return false;
     }
 }
