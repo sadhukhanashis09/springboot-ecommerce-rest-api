@@ -4,7 +4,6 @@ import com.app.ecom.dto.orderdto.request.OrderItemRequestDTO;
 import com.app.ecom.dto.orderdto.response.OrderItemResponseDTO;
 import com.app.ecom.dto.orderdto.response.OrderResponseDTO;
 import com.app.ecom.model.cart.Cart;
-import com.app.ecom.model.cart.CartItem;
 import com.app.ecom.model.order.Order;
 import com.app.ecom.model.order.OrderItem;
 import com.app.ecom.model.order.OrderStatus;
@@ -52,7 +51,9 @@ public class OrderService {
             Product product = productRepository.findById(orderItemRequestDTO.getProductId()).orElseThrow(
                     () -> new RuntimeException("Product Not found")
             );
-
+            if (product.getStockQuantity() < orderItemRequestDTO.getQuantity()) {
+                throw new RuntimeException("Insufficient stock for product: " + product.getName());
+            }
             OrderItem orderItem = new OrderItem();
             orderItem.setProduct(product);
             orderItem.setOrder(order);
@@ -60,13 +61,98 @@ public class OrderService {
             orderItem.setUnitPrice(product.getPrice());
             orderItem.setSubtotal(product.getPrice().multiply(BigDecimal.valueOf(orderItemRequestDTO.getQuantity())));
             total = total.add(orderItem.getSubtotal());
+            product.setStockQuantity(product.getStockQuantity() - orderItem.getQuantity());
+            productRepository.save(product);
             orderItems.add(orderItem);
         }
 
         order.setItems(orderItems);
         order.setTotalAmount(total);
         Order savedOrder = orderRepository.save(order);
+
+
         return mapToOrderResponseDTO(savedOrder);
+    }
+
+
+    public OrderResponseDTO placeOrderFromCart(Long userId) {
+        User user = userRepository.findById(userId).orElseThrow(
+                () -> new RuntimeException("User Not Found")
+        );
+
+        Cart cart = cartRepository.findByUserId(userId).orElseThrow(
+                () -> new RuntimeException("Cart Not Found")
+        );
+        if (cart.getItems().isEmpty()) {
+            throw new RuntimeException("Cart is empty");
+        }
+
+
+        List<OrderItemRequestDTO> orderItemsFromCart = cart.getItems().stream().map(
+                cartItemToOderItem -> new OrderItemRequestDTO(cartItemToOderItem.getId(), cartItemToOderItem.getQuantity())
+        ).toList();
+
+
+        OrderResponseDTO responseDTO = placeOrder(cart.getUser().getId(), orderItemsFromCart);
+
+        /*for(CartItem cartItem:cart.getItems()){
+            OrderItem orderItem = new OrderItem();
+            orderItem.setOrder(order);
+            orderItem.setProduct(cartItem.getProduct());
+            orderItem.setQuantity(cartItem.getQuantity());
+            orderItem.setUnitPrice(cartItem.getUnitPrice());
+            orderItem.setSubtotal(cartItem.getSubtotal());
+            total=total.add(orderItem.getSubtotal());
+            orderItems.add(orderItem);
+            Product product = new Product();
+            product.setStockQuantity(product.getStockQuantity() - cartItem.getQuantity());
+            productRepository.save(product);
+        }
+
+        order.setItems(orderItems);
+        order.setTotalAmount(total);
+        Order savedOrder = orderRepository.save(order);
+
+        //Decrease Stock Quantity after Order Placed */
+
+
+        cart.getItems().clear();
+        cartRepository.save(cart);
+        return responseDTO;
+
+    }
+
+    public List<OrderResponseDTO> getOrderByUser(Long userId) {
+        List<Order> orders = orderRepository.findByUserId(userId);
+
+        return orders.stream().map(
+                this::mapToOrderResponseDTO).toList();
+
+       /*return orders.stream()
+                .map(order -> mapToOrderResponseDTO(order)).toList();*/
+
+    }
+
+    public OrderResponseDTO getOrderById(Long orderId) {
+        return orderRepository.findById(orderId).map(
+                this::mapToOrderResponseDTO
+        ).orElseThrow(() -> new RuntimeException("Order Not found"));
+    }
+
+    public OrderResponseDTO cancelOrder(Long orderId) {
+        Order order = orderRepository.findById(orderId).orElseThrow(
+                () -> new RuntimeException("Order Not found")
+        );
+        order.setStatus(OrderStatus.CANCELLED);
+
+
+        for (OrderItem item : order.getItems()) {
+            Product product = item.getProduct();
+            product.setStockQuantity(product.getStockQuantity() + item.getQuantity());
+            productRepository.save(product);
+        }
+        Order cancelledOrder = orderRepository.save(order);
+        return mapToOrderResponseDTO(cancelledOrder);
     }
 
     private OrderResponseDTO mapToOrderResponseDTO(Order savedOrder) {
@@ -87,65 +173,6 @@ public class OrderService {
                 .status(savedOrder.getStatus().name())
                 .createdAt(savedOrder.getCreatedAt())
                 .build();
-    }
-
-    public OrderResponseDTO placeOrderFromCart(Long userId) {
-        User user = userRepository.findById(userId).orElseThrow(
-                () -> new RuntimeException("User Not Found")
-        );
-
-        Cart cart = cartRepository.findByUserId(userId).orElseThrow(
-                () -> new RuntimeException("Cart Not Found")
-        );
-        Order order = new Order();
-        order.setUser(user);
-
-        List<OrderItem> orderItems = new ArrayList<>();
-        BigDecimal total = BigDecimal.ZERO;
-
-        for(CartItem cartItem:cart.getItems()){
-            OrderItem orderItem = new OrderItem();
-            orderItem.setOrder(order);
-            orderItem.setProduct(cartItem.getProduct());
-            orderItem.setQuantity(cartItem.getQuantity());
-            orderItem.setUnitPrice(cartItem.getUnitPrice());
-            orderItem.setSubtotal(cartItem.getSubtotal());
-            total=total.add(orderItem.getSubtotal());
-            orderItems.add(orderItem);
-        }
-
-        order.setItems(orderItems);
-        order.setTotalAmount(total);
-        Order savedOrder = orderRepository.save(order);
-        return mapToOrderResponseDTO(savedOrder);
-
-
-    }
-
-    public List<OrderResponseDTO> getOrderByUser(Long userId) {
-       List<Order> orders = orderRepository.findByUserId(userId);
-
-       return orders.stream().map(
-               this::mapToOrderResponseDTO).toList();
-
-       /*return orders.stream()
-                .map(order -> mapToOrderResponseDTO(order)).toList();*/
-
-    }
-
-    public OrderResponseDTO getOrderById(Long orderId) {
-        return orderRepository.findById(orderId).map(
-                this::mapToOrderResponseDTO
-        ).orElseThrow(()-> new RuntimeException("Order Not found"));
-    }
-
-    public OrderResponseDTO cancelOrder(Long orderId) {
-    Order order = orderRepository.findById(orderId).orElseThrow(
-            () -> new RuntimeException("Order Not found")
-    );
-    order.setStatus(OrderStatus.CANCELLED);
-    Order cancelledOrder = orderRepository.save(order);
-    return mapToOrderResponseDTO(cancelledOrder);
     }
 
 

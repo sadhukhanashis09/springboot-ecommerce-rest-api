@@ -1,4 +1,4 @@
--- Addresses
+/* -- Addresses
 INSERT INTO addresses_table (
     id,
     street,
@@ -79,4 +79,4 @@ ALTER TABLE addresses_table
 ALTER COLUMN id RESTART WITH 3;
 
 ALTER TABLE users
-ALTER COLUMN id RESTART WITH 3;
+ALTER COLUMN id RESTART WITH 3; -- */
