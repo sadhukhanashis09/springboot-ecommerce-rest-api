@@ -31,7 +31,7 @@ public class OrderController {
         OrderResponseDTO response = orderService.placeOrderFromCart(userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
-    @GetMapping("/{userId}")
+    @GetMapping("/user/{userId}")
         public ResponseEntity<List<OrderResponseDTO>> getOrderByUser(
                 @PathVariable Long userId
         ){
@@ -39,7 +39,7 @@ public class OrderController {
             return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
-    @GetMapping("/{orderId}")
+    @GetMapping("/order/{orderId}")
     public ResponseEntity<OrderResponseDTO> getOrderById(
             @PathVariable Long orderId
     ){
